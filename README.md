@@ -1,3 +1,5 @@
+> **q_resil fork.** This is a fork of [cbomkit/sonar-cryptography](https://github.com/cbomkit/sonar-cryptography) published as `com.ibm:sonar-cryptography-plugin:1.7.0-qresil.1` on GitHub Packages. It makes `JavaAggregator` safe for concurrent module scans. See [FORK_NOTES.md](FORK_NOTES.md) for what differs from upstream and how to use or release it.
+
 # Sonar Cryptography Plugin (CBOMkit-hyperion)
 
 [![License](https://img.shields.io/github/license/cbomkit/sonar-cryptography.svg?)](https://opensource.org/licenses/Apache-2.0) <!--- long-description-skip-begin -->

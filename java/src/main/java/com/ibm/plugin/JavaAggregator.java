@@ -32,11 +32,24 @@ import org.sonar.plugins.java.api.JavaFileScannerContext;
 import org.sonar.plugins.java.api.semantic.Symbol;
 import org.sonar.plugins.java.api.tree.Tree;
 
+/**
+ * {@code javaLanguageSupport} is thread-local rather than a single shared instance: callers
+ * (cbomkit-lib's module-level parallel scan) may run multiple module analyses concurrently on
+ * different threads, and {@code ILanguageSupport}'s {@code Handler}/{@code CallStackAgent} is
+ * stateful (cross-file call-stack tracking within one compilation run) and was never designed to be
+ * mutated from more than one thread at a time. Giving each thread its own instance avoids a data
+ * race without changing single-threaded callers' behavior (each still sees one continuous instance
+ * for the calls it makes). {@code detectedNodes} is a synchronized list for the same reason: {@code
+ * addNodes} is invoked from whichever thread is running the visitor for the file currently being
+ * analyzed.
+ */
 public final class JavaAggregator implements IAggregator {
 
-    private static ILanguageSupport<JavaCheck, Tree, Symbol, JavaFileScannerContext>
-            javaLanguageSupport = LanguageSupporter.javaLanguageSupporter();
-    private static List<INode> detectedNodes = new ArrayList<>();
+    private static final ThreadLocal<
+                    ILanguageSupport<JavaCheck, Tree, Symbol, JavaFileScannerContext>>
+            javaLanguageSupport = ThreadLocal.withInitial(LanguageSupporter::javaLanguageSupporter);
+    private static final List<INode> detectedNodes =
+            Collections.synchronizedList(new ArrayList<>());
 
     private JavaAggregator() {
         // nothing
@@ -49,17 +62,17 @@ public final class JavaAggregator implements IAggregator {
 
     @Nonnull
     public static List<INode> getDetectedNodes() {
-        return Collections.unmodifiableList(detectedNodes);
+        return List.copyOf(detectedNodes);
     }
 
     @Nonnull
     public static ILanguageSupport<JavaCheck, Tree, Symbol, JavaFileScannerContext>
             getLanguageSupport() {
-        return javaLanguageSupport;
+        return javaLanguageSupport.get();
     }
 
     public static void reset() {
-        javaLanguageSupport = LanguageSupporter.javaLanguageSupporter();
-        detectedNodes = new ArrayList<>();
+        javaLanguageSupport.remove();
+        detectedNodes.clear();
     }
 }
