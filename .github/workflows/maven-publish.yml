@@ -17,10 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
+    # JDK 21, not 17: Spotless caps google-java-format at 1.28.0 on JVM 17, and this fork
+    # builds with 1.30.0. The bytecode target stays Java 17 (maven.compiler.source/target).
     - name: Set up JDK
       uses: actions/setup-java@v6
       with:
-        java-version: '17'
+        java-version: '21'
         distribution: 'temurin'
     - name: Deploy to GitHub Packages
       run: mvn --batch-mode deploy
